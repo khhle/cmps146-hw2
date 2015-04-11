@@ -4,10 +4,14 @@ def think(state, quip):
     
     rootstate = state.copy()
     rootnode = Node(state = rootstate)
-    node = Node(rootstate)
-    #stateCopy = rootstate.copy()
+    node = Node(state = rootstate)
     
-    return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
+    #If there's a winning move, do it
+    
+    #If no winning moves, move randomly
+    return random.choice(state.get_moves())
+    
+    
             
 class Node:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
