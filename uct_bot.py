@@ -1,13 +1,17 @@
+#close
+
 import random
 from math import *
 import datetime
+import time
 
+THINK_DURATION = 1
 def think(state, quip):
-    t1 = datetime.datetime.now()
-    num = UCT(rootstate = state, itermax = 5000, verbose = False)
-    t2 = datetime.datetime.now()
+    #t1 = datetime.datetime.now()
+    num = UCT(rootstate = state, itermax = 2000, verbose = False)
+    #t2 = datetime.datetime.now()
     #print num
-    print "Execution time: %s" % (t2-t1)
+    #print "Execution time: %s" % (t2-t1)
     return num
 
 
@@ -18,8 +22,12 @@ def UCT(rootstate, itermax, verbose = False):
         Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
 
     rootnode = Node(state = rootstate)
+    t_start = time.time()
+    t_deadline = t_start + THINK_DURATION
+    iterations = 0
 
-    for i in range(itermax):
+    while True:
+    #for i in range(itermax):
         node = rootnode
         state = rootstate.copy()
 
@@ -40,25 +48,28 @@ def UCT(rootstate, itermax, verbose = False):
 
         # Backpropagate
         while node != None: # backpropagate from the expanded node and work back to the root node
-            if node.playerJustMoved == 'red':
-                num = state.get_score()['red'] - state.get_score()['blue']
-            else:
-                num = state.get_score()['blue'] - state.get_score()['red']
 
-            if num > 0:
-                num = 1
-            elif num < 0:
-                num = -1
+            if node.parentNode is None:
+                num = state.get_score()[node.who]
             else:
-                num = 0
-
+                num = state.get_score()[node.who] - state.get_score()[node.parentNode.who]
             node.Update(num) # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
+
+        iterations += 1
+        t_now = time.time()
+        if t_now > t_deadline:
+            break
 
     # Output some information about the tree - can be omitted
     #if (verbose): print rootnode.TreeToString(0)
     #else: print rootnode.ChildrenToString()
-
+    sample_rate = float(iterations)/(t_now - t_start)
+    print "Sample rate: " + str(sample_rate)
+    #for c in rootnode.childNodes:
+	#	    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
+    #mostVisited = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1]
+    #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
 
 class Node:
@@ -74,12 +85,24 @@ class Node:
         self.untriedMoves = state.get_moves() # future child nodes
         self.playerJustMoved = state.get_whos_turn() # the only part of the state that the Node needs later
 
+        self.who = state.get_whos_turn()
+        if self.parentNode is None:
+            self.score = 0
+        else:
+            self.score = state.get_score()[self.parentNode.who] # gets score of current player
+
+
     def UCTSelectChild(self):
         """ Use the UCB1 formula to select a child node. Often a constant UCTK is applied so we have
             lambda c: c.wins/c.visits + UCTK * sqrt(2*log(self.visits)/c.visits to vary the amount of
             exploration versus exploitation.
         """
-        s = sorted(self.childNodes, key = lambda c: c.wins/c.visits + sqrt(2*log(self.visits)/c.visits))[-1]
+        #s = sorted(self.childNodes, key = lambda c: c.wins/c.visits + sqrt(2*log(self.visits)/c.visits))[-1]
+        #for c in self.childNodes:
+		#    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
+        #mostVisited = sorted(self.childNodes, key = lambda c: c.visits)[-1]
+        #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
+        s = sorted(self.childNodes, key = lambda c: (c.score/c.visits ) + sqrt(2*log(self.visits)/c.visits))[-1]
         return s
 
     def AddChild(self, m, s):
@@ -95,6 +118,7 @@ class Node:
         """ Update this node - one additional visit and result additional wins. result must be from the viewpoint of playerJustmoved.
         """
         self.visits += 1
+        self.score = result
         self.wins += result
 
     def __repr__(self):
