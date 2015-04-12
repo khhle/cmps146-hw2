@@ -50,21 +50,16 @@ def UCT(rootstate, itermax, verbose = False):
 
         # Backpropagate
         while node != None: # backpropagate from the expanded node and work back to the root node
-            if node.playerJustMoved == 'blue':
-                num = state.get_score()['red'] - state.get_score()['blue']
-            else:
-                num = state.get_score()['blue'] - state.get_score()['red']
 
-            if num > 0:
-                num = 1
-            elif num < 0:
-                num = -1
-            else:
-                num = 0
             if node.parentNode is None:
                 num = state.get_score()[node.who]
             else:
-                num = state.get_score()[node.who] - state.get_score()[node.parentNode.who]
+                #num = state.get_score()[node.who] - state.get_score()[node.parentNode.who]
+                node.score +=  state.get_score()[node.parentNode.who]
+                #if node.who == node.parentNode.who:
+                #    print str(node.who) + " " + str(node.parentNode.who)
+                #    print str(num)
+            num = 0
             node.Update(num) # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
 
@@ -80,8 +75,9 @@ def UCT(rootstate, itermax, verbose = False):
     print "Sample rate: " + str(sample_rate)
     #for c in rootnode.childNodes:
 	#	    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
-    #mostVisited = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1]
+    mostVisited = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1]
     #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
+    #print "out " + str(float(mostVisited.score)/mostVisited.visits)
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
 
 class Node:
@@ -98,10 +94,11 @@ class Node:
         self.playerJustMoved = state.get_whos_turn() # the only part of the state that the Node needs later
 
         self.who = state.get_whos_turn()
-        if self.parentNode is None:
-            self.score = 0
-        else:
-            self.score = state.get_score()[self.parentNode.who] # gets score of current player
+        self.score = 0
+        #if self.parentNode is None:
+        #    self.score = 0
+        #else:
+        #    self.score = state.get_score()[self.parentNode.who] # gets score of current player
 
 
     def UCTSelectChild(self):
@@ -114,7 +111,7 @@ class Node:
 		#    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
         #mostVisited = sorted(self.childNodes, key = lambda c: c.visits)[-1]
         #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
-        s = sorted(self.childNodes, key = lambda c: (c.score/c.visits ) + sqrt(2*log(self.visits)/c.visits))[-1]
+        s = sorted(self.childNodes, key = lambda c: (float(c.score)/c.visits ) + sqrt(2*log(self.visits)/c.visits))[-1]
         return s
 
     def AddChild(self, m, s):
@@ -130,7 +127,7 @@ class Node:
         """ Update this node - one additional visit and result additional wins. result must be from the viewpoint of playerJustmoved.
         """
         self.visits += 1
-        self.score = result
+        #self.score = result
         self.wins += result
 
     def __repr__(self):
