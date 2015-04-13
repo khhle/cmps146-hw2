@@ -53,7 +53,8 @@ def UCT(rootstate, itermax, verbose = False):
                 num = state.get_score()[node.who]
             else:
                 #num = state.get_score()[node.who] - state.get_score()[node.parentNode.who]
-                node.score +=  state.get_score()[node.parentNode.who]
+                #node.score +=  state.get_score()[node.parentNode.who]
+                node.score = compute_score_from_perspective(state.get_score(),node.parentNode.who)
                 #if node.who == node.parentNode.who:
                 #    print str(node.who) + " " + str(node.parentNode.who)
                 #    print str(num)
@@ -70,7 +71,7 @@ def UCT(rootstate, itermax, verbose = False):
     #if (verbose): print rootnode.TreeToString(0)
     #else: print rootnode.ChildrenToString()
     sample_rate = float(iterations)/(t_now - t_start)
-    print "Sample rate: " + str(sample_rate)
+    print "Rollout rate: " + str(sample_rate)
     #for c in rootnode.childNodes:
 	#	    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
     mostVisited = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1]
@@ -148,3 +149,14 @@ class Node:
         for c in self.childNodes:
              s += str(c) + "\n"
         return s
+
+def compute_score_from_perspective(score_dict, which_player):
+    score1 = score_dict[which_player]
+    if which_player == "red":
+        score2 = score_dict["blue"]
+    elif which_player == "blue":
+        score2 = score_dict["red"]
+    else:
+        score2 = 0
+        print "Error"
+    return score1 - score2
