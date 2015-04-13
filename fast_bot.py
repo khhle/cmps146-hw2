@@ -49,7 +49,7 @@ def UCT(rootstate, itermax, verbose = False):
             if node.parentNode is None:
                 node.score = 0
             else:
-                node.score = compute_score_from_perspective(state.get_score(),node.parentNode.who)
+                node.score += compute_score_from_perspective(state.get_score(),node.parentNode.who)
 
             node.visits += 1
             node = node.parentNode
@@ -61,7 +61,7 @@ def UCT(rootstate, itermax, verbose = False):
 
 
     sample_rate = float(iterations)/(t_now - t_start)
-    print str(get_opposite(rootstate.get_whos_turn())) + " rollout rate: " + str(sample_rate)
+    print str(rootstate.get_whos_turn()) + " rollout rate: " + str(sample_rate)
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
 
 class Node:
