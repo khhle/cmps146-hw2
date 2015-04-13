@@ -1,17 +1,12 @@
-#close
 
 import random
 from math import *
-import datetime
 import time
 
 THINK_DURATION = 1
 def think(state, quip):
-    #t1 = datetime.datetime.now()
+
     num = UCT(rootstate = state, itermax = 2000, verbose = False)
-    #t2 = datetime.datetime.now()
-    #print num
-    #print "Execution time: %s" % (t2-t1)
     return num
 
 
@@ -52,16 +47,11 @@ def UCT(rootstate, itermax, verbose = False):
         while node != None: # backpropagate from the expanded node and work back to the root node
 
             if node.parentNode is None:
-                num = state.get_score()[node.who]
+                node.score = 0
             else:
-                #num = state.get_score()[node.who] - state.get_score()[node.parentNode.who]
-                #node.score +=  state.get_score()[node.parentNode.who]
                 node.score = compute_score_from_perspective(state.get_score(),node.parentNode.who)
-                #if node.who == node.parentNode.who:
-                #    print str(node.who) + " " + str(node.parentNode.who)
-                #    print str(num)
-            num = 0
-            node.Update(num) # state is terminal. Update node with result from POV of node.playerJustMoved
+
+            node.visits += 1
             node = node.parentNode
 
         iterations += 1
@@ -69,16 +59,9 @@ def UCT(rootstate, itermax, verbose = False):
         if t_now > t_deadline:
             break
 
-    # Output some information about the tree - can be omitted
-    #if (verbose): print rootnode.TreeToString(0)
-    #else: print rootnode.ChildrenToString()
+
     sample_rate = float(iterations)/(t_now - t_start)
-    print "Rollout rate: " + str(sample_rate)
-    #for c in rootnode.childNodes:
-	#	    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
-    mostVisited = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1]
-    #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
-    #print "out " + str(float(mostVisited.score)/mostVisited.visits)
+    print str(get_opposite(rootstate.get_whos_turn())) + " rollout rate: " + str(sample_rate)
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
 
 class Node:
@@ -92,14 +75,11 @@ class Node:
         self.wins = 0
         self.visits = 0
         self.untriedMoves = state.get_moves() # future child nodes
-        self.playerJustMoved = state.get_whos_turn() # the only part of the state that the Node needs later
+        #self.playerJustMoved = state.get_whos_turn() # the only part of the state that the Node needs later
 
         self.who = state.get_whos_turn()
         self.score = 0
-        #if self.parentNode is None:
-        #    self.score = 0
-        #else:
-        #    self.score = state.get_score()[self.parentNode.who] # gets score of current player
+
 
 
     def UCTSelectChild(self):
@@ -107,11 +87,6 @@ class Node:
             lambda c: c.wins/c.visits + UCTK * sqrt(2*log(self.visits)/c.visits to vary the amount of
             exploration versus exploitation.
         """
-        #s = sorted(self.childNodes, key = lambda c: c.wins/c.visits + sqrt(2*log(self.visits)/c.visits))[-1]
-        #for c in self.childNodes:
-		#    print "W/V: " + str(c.score) + " " + str(c.visits) #+ " " + str(c)
-        #mostVisited = sorted(self.childNodes, key = lambda c: c.visits)[-1]
-        #print "most" + str (mostVisited.score) + " " + str(mostVisited.visits)
         s = sorted(self.childNodes, key = lambda c: (float(c.score)/c.visits ) + sqrt(2*log(self.visits)/c.visits))[-1]
         return s
 
@@ -162,3 +137,11 @@ def compute_score_from_perspective(score_dict, which_player):
         score2 = 0
         print "Error"
     return score1 - score2
+
+def get_opposite(which_player):
+    if which_player == "red":
+        return "blue"
+    elif which_player == "blue":
+        return "red"
+    else:
+        return "error"
